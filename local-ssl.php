@@ -3,7 +3,7 @@
  * Plugin Name: Local SSL
  * Plugin URL: https://cybercove.io/
  * Description: Allow DesktopServer to use SSL
- * Version: 2.0.15
+ * Version: 2.0.16
  * Author: Joshua Knapp
  * Author URI: http://joshuaknapp.me
  *

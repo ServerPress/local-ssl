@@ -7,8 +7,7 @@ if ( PHP_OS !== 'Darwin' ){
 	// Windows
 	//define the local_ssl_path
 	define("local_ssl_path",addslashes(__DIR__ . '\\'));
-	//$openssl_path = dirname(dirname(__DIR__)) . '\\runtime\\platform\\win32\\cygwin\\bin\\openssl.exe';
-	define("openssl_path",addslashes('C:\xampplite\ds-plugins\ds-cli\platform\win32\cygwin\bin\openssl.exe'));
+	define("openssl_path",addslashes(__DIR__ . '\openssl.exe'));
 	define("returns","\r\n");
 } else {
 	//define the local_ssl_path
