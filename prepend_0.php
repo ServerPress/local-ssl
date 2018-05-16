@@ -7,7 +7,7 @@ if ( PHP_OS !== 'Darwin' ){
 	// Windows
 	//define the local_ssl_path
 	define("local_ssl_path",addslashes(__DIR__ . '\\'));
-	define("openssl_path",addslashes(__DIR__ . '\openssl.exe'));
+	define("openssl_path",addslashes(__DIR__ . '\win32\cygwin\bin\openssl.exe'));
 	define("returns","\r\n");
 } else {
 	//define the local_ssl_path
@@ -75,10 +75,9 @@ function rewrite_vhosts() {
 function create_root_ca() {
 	//If the RootCA doesn't Exist, Create it!
 	if ( !file_exists ( local_ssl_path . "ServerPressCA.crt" ) ) {
-		//Create the Root CA
 		shell_exec(openssl_path . ' genrsa -out '. local_ssl_path . 'ServerPressCA.key 2048 2>&1');
 		shell_exec(openssl_path . ' req -x509 -new -nodes -key ' . local_ssl_path . 'ServerPressCA.key -sha256 -days 3650 -out ' . local_ssl_path . 'ServerPressCA.crt  -subj "/C=US/ST=California/L=Los Angeles/O=ServerPress/OU=Customers/CN=Serverpress.localhost" 2>&1');	
-if ( PHP_OS !== 'Darwin' ){
+		if ( PHP_OS !== 'Darwin' ){
 			// Windows
 			//Try to Install the Root CA
 			passthru('certutil -addstore "Root" "' . local_ssl_path . 'ServerPressCA.crt" 2>&1');
@@ -102,11 +101,11 @@ function create_ssl($domain = null, $keypath, $certpath) {
 
 	if ( $siteName !== '' ) {
 		//Create the tmpfile
-		$ssl_template = "authorityKeyIdentifier=keyid,issuer\nbasicConstraints=CA:FALSE\nkeyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment\nsubjectAltName = @alt_names\n\n[alt_names]\nDNS.1 = " . $siteName;
+		$ssl_template = "authorityKeyIdentifier=keyid,issuer\nbasicConstraints=CA:FALSE\nkeyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment\nsubjectAltName = @alt_names\n\n[alt_names]\nDNS.1 = *." . $siteName . "\nDNS.2 = " . $siteName;
 		$ssl_temp_file = fopen(local_ssl_path . '_' . $siteName . "_v3.ext", "w")or die("Unable to open file: " . local_ssl_path . '_' . $siteName . "_v3.ext" ." !");
 		fwrite($ssl_temp_file, $ssl_template);
 		fclose($ssl_temp_file);
-		$SUBJECT="/C=US/ST=California/L=Los Angeles/O=DesktopServer/CN=$siteName";
+		$SUBJECT="/C=US/ST=California/L=Los Angeles/O=DesktopServer/CN=*.$siteName";
 		$NUM_OF_DAYS = 3650; //10 years
 		if ( !file_exists($certpath . $siteName . '.crt')) {
 			shell_exec(openssl_path . ' req -new -newkey rsa:2048 -sha256 -nodes -keyout ' . local_ssl_path . $siteName . '.key -subj "' . $SUBJECT . '" -out ' . local_ssl_path . $siteName . '.csr 2>&1');
