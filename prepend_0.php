@@ -34,7 +34,8 @@ function rewrite_vhosts() {
 	//load file into memory to edit
 	$httpd_conf_data = file_get_contents($httpd_conf);
 	$httpd_conf_array = explode(returns,$httpd_conf_data);
-	
+	$get_server_name = FALSE;
+	$new_httpd_conf = '';
 	foreach ($httpd_conf_array as $httpd_line) {
 		if ( strpos($httpd_line,':443') != FALSE ) {
 			
