@@ -37,7 +37,7 @@ function local_ssl_install_message()
 
 	echo '<div class="notice notice-error">',
 		'<p>',
-		sprintf( __('The Local SSL plugin needs to be installed in Desktop Server\'s ds-plugins directory.<br/>Please install in %1$slocal-ssl', 'local-ssl' ),
+		sprintf( __('The Local SSL plugin needs to be installed in Desktop Server\'s ds-plugins directory.<br/>Please install in %1$s', 'local-ssl' ),
 			$correct_dir),
 		'</p>',
 		'</div>';
