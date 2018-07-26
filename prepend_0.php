@@ -124,6 +124,24 @@ function create_ssl($domain = null, $keypath, $certpath) {
 
 //The Setup is done, lets run.
 if ( false === $ds_runtime->last_ui_event ) return;
+
+//If we are Removing a site, we should remove the file
+if ( $ds_runtime->last_ui_event->action == "site_removed" ) {
+	//Are we on Mac or PC
+	if ( PHP_OS === 'Darwin' ){
+		$cert_path = '/Applications/XAMPP/xamppfiles/etc/ssl.crt/';
+		$key_path = '/Applications/XAMPP/xamppfiles/etc/ssl.key/';
+	}else{
+		$cert_path = 'C:\\xampplite\\apache\\conf\\ssl.crt\\';
+		$key_path = 'C:\\xampplite\\apache\\conf\ssl.key\\';
+	}
+	//Remove the ssl file
+	unlink ($cert_path . $ds_runtime->last_ui_event->info[0] . ".crt");
+	unlink ($key_path . $ds_runtime->last_ui_event->info[0] . ".key");
+	return;
+}
+
+//Create SSLs for new sites
 if ( 'update_server' != $ds_runtime->last_ui_event->action ) return;
 create_root_ca();
 rewrite_vhosts();
