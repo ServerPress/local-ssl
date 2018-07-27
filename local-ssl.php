@@ -52,3 +52,22 @@ function ds_https_verify()
 
 //add filter after loaded
 add_action('init','ds_https_verify');
+
+require(__DIR__ . "/lib/localssl_settings.php");
+
+
+//ReWrite http to https
+function callback_ssl_url($buffer) {
+  $buffer = str_ireplace("http://","https://",$buffer);
+$buffer = str_ireplace("http:\/\/","https:\/\/",$buffer);  
+  return $buffer;
+}
+function buffer_start_ssl_url() { ob_start('callback_ssl_url'); }
+function buffer_end_ssl_url() { if (ob_get_length()) ob_end_clean(); }
+// http://codex.wordpress.org/Plugin_API/Action_Reference
+
+$options = get_option( 'localssl_settings' );
+if ( isset( $options['localssl_https_upgrade'] ) && $options['localssl_https_upgrade'] == TRUE ) {
+	add_action('registered_taxonomy', 'buffer_start_ssl_url');
+	add_action('shutdown', 'buffer_end_ssl_url');
+}
