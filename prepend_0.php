@@ -1,17 +1,14 @@
 <?php
 
-global $ds_runtime;
-
 //Set the Stage
+//define the LOCAL_SSL_PATH
+define( 'LOCAL_SSL_PATH', __DIR__ . DIRECTORY_SEPARATOR );
 //define OPENSSL location
 if ( 'Darwin' !== PHP_OS ){
 	// Windows
-	//define the LOCAL_SSL_PATH
-	define( 'LOCAL_SSL_PATH', addslashes( __DIR__ . '\\' ) );
-	define( 'OPENSSL_PATH', addslashes( __DIR__ . '\\win32\\cygwin\\bin\\openssl.exe' ) );
+	define( 'OPENSSL_PATH', __DIR__ . '\\win32\\cygwin\\bin\\openssl.exe' );
 } else {
-	// define the LOCAL_SSL_PATH
-	define( 'LOCAL_SSL_PATH', __DIR__ . '/' );
+	// Mac
 	define( 'OPENSSL_PATH', '/usr/bin/openssl' );
 }
 
@@ -21,7 +18,7 @@ if ( 'Darwin' !== PHP_OS ){
 /**
  * Parse and rewrite the httpd configuration file
  */
-function rewrite_vhosts()
+function local_ssl_rewrite_vhosts()
 {
 	// Are we on Mac or PC
 	if ( 'Darwin' === PHP_OS ) {
@@ -47,7 +44,7 @@ function rewrite_vhosts()
 				$domain = trim( end ( $servername ) );
 				// if the cert doesn't exist, create it
 				if ( ! file_exists( $cert_path . $domain . '.crt' ) ) {
-					create_ssl( $domain, $key_path, $cert_path );
+					local_ssl_create_ssl( $domain, $key_path, $cert_path );
 				}
 			}
 		}
@@ -72,13 +69,13 @@ function rewrite_vhosts()
 /**
  * Create the root CA for Local SSL
  */
-function create_root_ca()
+function local_ssl_create_root_ca()
 {
 	// If the RootCA doesn't exist, create it
 	if ( ! file_exists ( LOCAL_SSL_PATH . 'ServerPressCA.crt' ) ) {
 		shell_exec( OPENSSL_PATH . ' genrsa -out "' . LOCAL_SSL_PATH . 'ServerPressCA.key" 2048 2>&1' );
 $cmd = OPENSSL_PATH . ' genrsa -out "' . LOCAL_SSL_PATH . 'ServerPressCA.key" 2048 2>&1';
-error_log('OpenSSL exec: ' . $cmd);
+local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
 		shell_exec( OPENSSL_PATH . ' req -x509 -new -nodes -key ' .
 			'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -sha256 -days 3650 -out ' .
 			'"' . LOCAL_SSL_PATH . 'ServerPressCA.crt" ' .
@@ -87,15 +84,19 @@ $cmd = OPENSSL_PATH . ' req -x509 -new -nodes -key ' .
 			'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -sha256 -days 3650 -out ' .
 			'"' . LOCAL_SSL_PATH . 'ServerPressCA.crt" ' .
 			'-subj "/C=US/ST=California/L=Los Angeles/O=ServerPress/OU=Customers/CN=Serverpress.localhost" 2>&1';
-error_log('OpenSSL exec: ' . $cmd);
+local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
+
 		if ( 'Darwin' !== PHP_OS ) {
 			// Windows
 			// Try to Install the Root CA
+			// TODO: do we need to pass the results of certutil back to the browser? Maybe use exec() instead of passthru()?
 			passthru( 'certutil -addstore "Root" "' . LOCAL_SSL_PATH . 'ServerPressCA.crt" 2>&1' );
+$cmd = 'certutil -addstore "Root" "' . LOCAL_SSL_PATH . 'ServerPressCA.crt" 2>&1';
+local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
 			//die();
 		} else {
-			//Mac
-			//Try to install the Root CA
+			// Mac
+			// Try to install the Root CA
 			shell_exec( 'osascript ' . LOCAL_SSL_PATH . 'mac_root_ca_install.scpt' );
 		}
 	}
@@ -108,7 +109,7 @@ error_log('OpenSSL exec: ' . $cmd);
  * @param string $keypath Path the the key store
  * @param string $certpath Path to the certificate
  */
-function create_ssl( $domain, $keypath, $certpath )
+function local_ssl_create_ssl( $domain, $keypath, $certpath )
 {
 	if ( NULL == $domain ) {
 		die( 'Domain is not set' );
@@ -128,13 +129,25 @@ function create_ssl( $domain, $keypath, $certpath )
 		$NUM_OF_DAYS = 3650; //10 years
 		if ( ! file_exists( $certpath . $siteName . '.crt' ) ) {
 			shell_exec( OPENSSL_PATH . ' req -new -newkey rsa:2048 -sha256 -nodes -keyout ' .
-				LOCAL_SSL_PATH . $siteName . '.key -subj "' . $SUBJECT . '" -out ' .
-				LOCAL_SSL_PATH . $siteName . '.csr 2>&1');
-			shell_exec( OPENSSL_PATH . ' x509 -req -in ' . LOCAL_SSL_PATH  .
-				$siteName . '.csr -CA ' . LOCAL_SSL_PATH  . 'ServerPressCA.crt -CAkey ' .
-				LOCAL_SSL_PATH . 'ServerPressCA.key -CAcreateserial -out '. LOCAL_SSL_PATH .
-				$siteName . '.crt -days ' . $NUM_OF_DAYS . ' -sha256 -extfile ' . LOCAL_SSL_PATH .
-				'_' . $siteName . '_v3.ext 2>&1');
+				'"' . LOCAL_SSL_PATH . $siteName . '.key" -subj "' . $SUBJECT . '" -out ' .
+				'"' . LOCAL_SSL_PATH . $siteName . '.csr" 2>&1');
+$cmd = OPENSSL_PATH . ' req -new -newkey rsa:2048 -sha256 -nodes -keyout ' .
+				'"' . LOCAL_SSL_PATH . $siteName . '.key" -subj "' . $SUBJECT . '" -out ' .
+				'"' . LOCAL_SSL_PATH . $siteName . '.csr" 2>&1';
+local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
+			shell_exec( OPENSSL_PATH . ' x509 -req -in ' .
+				'"' . LOCAL_SSL_PATH . $siteName . '.csr" -CA ' .
+				'"' . LOCAL_SSL_PATH  . 'ServerPressCA.crt" -CAkey ' .
+				'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -CAcreateserial -out '.
+				'"' . LOCAL_SSL_PATH . $siteName . '.crt" -days ' . $NUM_OF_DAYS . ' -sha256 -extfile ' .
+				'"' . LOCAL_SSL_PATH . '_' . $siteName . '_v3.ext" 2>&1');
+$cmd = OPENSSL_PATH . ' x509 -req -in ' .
+				'"' . LOCAL_SSL_PATH . $siteName . '.csr" -CA ' .
+				'"' . LOCAL_SSL_PATH  . 'ServerPressCA.crt" -CAkey ' .
+				'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -CAcreateserial -out '.
+				'"' . LOCAL_SSL_PATH . $siteName . '.crt" -days ' . $NUM_OF_DAYS . ' -sha256 -extfile ' .
+				'"' . LOCAL_SSL_PATH . '_' . $siteName . '_v3.ext" 2>&1';
+local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
 		}
 
 		// Move the Key and Crt files
@@ -147,7 +160,28 @@ function create_ssl( $domain, $keypath, $certpath )
 	}
 }
 
+/**
+ * Function used for debugging
+ * @param string $msg Message to output to trace window and log file
+ */
+function local_ssl_debug( $msg )
+{
+	if (function_exists('trace'))
+		trace('localssl: ' . $msg);
+
+	$file = __DIR__ . '/~log.txt';
+	$fh = @fopen($file, 'a+');
+	if (FALSE !== $fh) {
+		if (NULL === $msg)
+			fwrite($fh, date('Y-m-d H:i:s'));
+		else
+			fwrite($fh, date('Y-m-d H:i:s - ') . $msg . "\r\n");
+		fclose($fh);
+	}
+}
+
 // The Setup is done, lets run.
+global $ds_runtime;
 if ( FALSE === $ds_runtime->last_ui_event )
 	return;
 
@@ -168,8 +202,7 @@ if ( 'site_removed' === $ds_runtime->last_ui_event->action ) {
 }
 
 // Create SSLs for new sites
-if ( 'update_server' !== $ds_runtime->last_ui_event->action )
-	return;
-
-create_root_ca();
-rewrite_vhosts();
+if ( 'update_server' === $ds_runtime->last_ui_event->action ) {
+	local_ssl_create_root_ca();
+	local_ssl_rewrite_vhosts();
+}

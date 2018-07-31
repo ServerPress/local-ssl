@@ -14,6 +14,7 @@
 //stop if running in cli
 if ( 'cli' === PHP_SAPI ) {
     // In cli-mode
+local_ssl_debug('in CLI mode');
 	return;
 }
 
@@ -50,13 +51,14 @@ function local_ssl_install_message()
  */
 function local_ssl_https_verify()
 {
+local_ssl_debug('inside ' . __FUNCTION__ . '()');
 	add_filter( 'https_ssl_verify', '__return_false' );
 }
 
 //add filter after loaded
 add_action( 'init', 'local_ssl_https_verify' );
 
-require(__DIR__ . '/lib/localssl_settings.php' );
+require_once( __DIR__ . '/lib/localssl_settings.php' );
 
 
 /**
@@ -66,7 +68,8 @@ require(__DIR__ . '/lib/localssl_settings.php' );
  */
 function local_ssl_callback_ssl_url( $buffer )
 {
-	return str_ireplace( array( 'http://', 'https:\\/\\/' ), 'https://', $buffer );
+local_ssl_debug('inside ' . __FUNCTION__ . '(): ' . $buffer);
+	return str_ireplace( array( 'http://', 'https:\\/\\/' ), array( 'https://', 'https://' ), $buffer );
 }
 
 /**
@@ -74,6 +77,7 @@ function local_ssl_callback_ssl_url( $buffer )
  */
 function local_ssl_buffer_start_ssl_url()
 {
+local_ssl_debug('inside ' . __FUNCTION__ . '()');
 	ob_start( 'local_ssl_callback_ssl_url' );
 }
 
@@ -82,12 +86,15 @@ function local_ssl_buffer_start_ssl_url()
  */
 function local_ssl_buffer_end_ssl_url()
 {
+local_ssl_debug('inside ' . __FUNCTION__ . '()');
 	if ( ob_get_length() )
 		ob_end_clean();
 }
 
 $options = get_option( 'localssl_settings' );
 if ( isset( $options['localssl_https_upgrade'] ) && $options['localssl_https_upgrade'] ) {
-	add_action( 'registered_taxonomy', 'local_ssl_buffer_start_ssl_url' );
+	// 'registered_taxonomy' is fired several times. We only want the callback performed once
+#	add_action( 'registered_taxonomy', 'local_ssl_buffer_start_ssl_url' );
+	add_action( 'plugins_loaded', 'local_ssl_buffer_start_ssl_url' );
 	add_action( 'shutdown', 'local_ssl_buffer_end_ssl_url' );
 }
