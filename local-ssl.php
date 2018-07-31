@@ -7,18 +7,17 @@
  * Author: Joshua Knapp
  * Text Domain: local-ssl
  * Author URI: http://joshuaknapp.me
- *
  */
 
- //2.x Branch is developed to Work with DS 3.9
+//2.x Branch is developed to Work with DS 3.9
 
- //stop if running in cli
+//stop if running in cli
 if ( 'cli' === PHP_SAPI ) {
     // In cli-mode
 	return;
 }
 
-//detect if we are in the ds-plugins folder
+// detect if we are in the ds-plugins folder
 if ( FALSE === strpos( __DIR__, 'ds-plugins' ) ) {
 	// detect if not in the ds-plugins folder
 	if ( is_admin() ) {
@@ -27,7 +26,9 @@ if ( FALSE === strpos( __DIR__, 'ds-plugins' ) ) {
 	}
 }
 
-//Throw Error Message for WordPress if LocalSSL is not where it should be
+/**
+ * Display Error Message for WordPress if LocalSSL is not where it should be
+ */
 function local_ssl_install_message()
 {
 	if ( 'Darwin' === PHP_OS )
@@ -44,30 +45,49 @@ function local_ssl_install_message()
 }
 
 
-//Prevent WordPress from trying to validate the SSL 
-function ds_https_verify()
+/**
+ * Prevent WordPress from trying to validate the SSL
+ */
+function local_ssl_https_verify()
 {
 	add_filter( 'https_ssl_verify', '__return_false' );
 }
 
 //add filter after loaded
-add_action('init','ds_https_verify');
+add_action( 'init', 'local_ssl_https_verify' );
 
-require(__DIR__ . "/lib/localssl_settings.php");
+require(__DIR__ . '/lib/localssl_settings.php' );
 
 
-//ReWrite http to https
-function callback_ssl_url($buffer) {
-  $buffer = str_ireplace("http://","https://",$buffer);
-$buffer = str_ireplace("http:\/\/","https:\/\/",$buffer);  
-  return $buffer;
+/**
+ * ReWrite http to https
+ * @param string $buffer Content to perform rewrites on
+ * @return string Content with http:// references changed to https://
+ */
+function local_ssl_callback_ssl_url( $buffer )
+{
+	return str_ireplace( array( 'http://', 'https:\\/\\/' ), 'https://', $buffer );
 }
-function buffer_start_ssl_url() { ob_start('callback_ssl_url'); }
-function buffer_end_ssl_url() { if (ob_get_length()) ob_end_clean(); }
-// http://codex.wordpress.org/Plugin_API/Action_Reference
+
+/**
+ * Callback to kick off the output buffering
+ */
+function local_ssl_buffer_start_ssl_url()
+{
+	ob_start( 'local_ssl_callback_ssl_url' );
+}
+
+/**
+ * Callback for 'shutdown' action. Used to close any active Output Buffers.
+ */
+function local_ssl_buffer_end_ssl_url()
+{
+	if ( ob_get_length() )
+		ob_end_clean();
+}
 
 $options = get_option( 'localssl_settings' );
-if ( isset( $options['localssl_https_upgrade'] ) && $options['localssl_https_upgrade'] == TRUE ) {
-	add_action('registered_taxonomy', 'buffer_start_ssl_url');
-	add_action('shutdown', 'buffer_end_ssl_url');
+if ( isset( $options['localssl_https_upgrade'] ) && $options['localssl_https_upgrade'] ) {
+	add_action( 'registered_taxonomy', 'local_ssl_buffer_start_ssl_url' );
+	add_action( 'shutdown', 'local_ssl_buffer_end_ssl_url' );
 }
