@@ -71,92 +71,97 @@ function local_ssl_rewrite_vhosts()
  */
 function local_ssl_create_root_ca()
 {
+local_ssl_debug(__FUNCTION__.'()');
 	// If the RootCA doesn't exist, create it
-	if ( ! file_exists ( LOCAL_SSL_PATH . 'ServerPressCA.crt' ) ) {
-		shell_exec( OPENSSL_PATH . ' genrsa -out "' . LOCAL_SSL_PATH . 'ServerPressCA.key" 2048 2>&1' );
-$cmd = OPENSSL_PATH . ' genrsa -out "' . LOCAL_SSL_PATH . 'ServerPressCA.key" 2048 2>&1';
+	if ( ! file_exists ( LOCAL_SSL_PATH . 'ServerPressCA.crt' ) || ! file_exists ( LOCAL_SSL_PATH . 'ServerPressCA.key' ) ) {
+		$cmd = OPENSSL_PATH . ' genrsa -out "' . LOCAL_SSL_PATH . 'ServerPressCA.key" 2048 2>&1';
 local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
-		shell_exec( OPENSSL_PATH . ' req -x509 -new -nodes -key ' .
-			'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -sha256 -days 3650 -out ' .
-			'"' . LOCAL_SSL_PATH . 'ServerPressCA.crt" ' .
-			'-subj "/C=US/ST=California/L=Los Angeles/O=ServerPress/OU=Customers/CN=Serverpress.localhost" 2>&1' );
-$cmd = OPENSSL_PATH . ' req -x509 -new -nodes -key ' .
+		$res = shell_exec( $cmd );
+local_ssl_debug(__FUNCTION__.'() res: ' . $res);
+
+		$cmd = OPENSSL_PATH . ' req -x509 -new -nodes -key ' .
 			'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -sha256 -days 3650 -out ' .
 			'"' . LOCAL_SSL_PATH . 'ServerPressCA.crt" ' .
 			'-subj "/C=US/ST=California/L=Los Angeles/O=ServerPress/OU=Customers/CN=Serverpress.localhost" 2>&1';
 local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
+		$res = shell_exec( $cmd );
+local_ssl_debug(__FUNCTION__.'() res: ' . $res);
 
 		if ( 'Darwin' !== PHP_OS ) {
 			// Windows
 			// Try to Install the Root CA
 			// TODO: do we need to pass the results of certutil back to the browser? Maybe use exec() instead of passthru()?
-			passthru( 'certutil -addstore "Root" "' . LOCAL_SSL_PATH . 'ServerPressCA.crt" 2>&1' );
-$cmd = 'certutil -addstore "Root" "' . LOCAL_SSL_PATH . 'ServerPressCA.crt" 2>&1';
+			$cmd = 'certutil -addstore "Root" "' . LOCAL_SSL_PATH . 'ServerPressCA.crt" 2>&1';
 local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
+			$res = shell_exec( $cmd );
+local_ssl_debug(__FUNCTION__.'() res: ' . $res);
 			//die();
 		} else {
 			// Mac
 			// Try to install the Root CA
 			shell_exec( 'osascript ' . LOCAL_SSL_PATH . 'mac_root_ca_install.scpt' );
 		}
+	} else {
+local_ssl_debug(__FUNCTION__.'() root CA exists');
 	}
-	
 }
 
 /**
  * Create the SSL certificate
- * @param string $domain The domain name
+ * @param string $site_name The site name / domain name
  * @param string $keypath Path the the key store
  * @param string $certpath Path to the certificate
  */
-function local_ssl_create_ssl( $domain, $keypath, $certpath )
+function local_ssl_create_ssl( $site_name, $keypath, $certpath )
 {
-	if ( NULL == $domain ) {
+	if ( NULL === $site_name ) {
 		die( 'Domain is not set' );
 	}
-	$siteName = $domain;
 
-	if ( '' !== $siteName ) {
+	if ( '' !== $site_name ) {
 		//Create the tmpfile
-		$ssl_template = 'authorityKeyIdentifier=keyid,issuer\nbasicConstraints=CA:FALSE\nkeyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment\nsubjectAltName = @alt_names\n\n[alt_names]\nDNS.1 = *.' . $siteName . "\nDNS.2 = " . $siteName;
-		if (FALSE === ($ssl_temp_file = fopen( LOCAL_SSL_PATH . '_' . $siteName . '_v3.ext', 'w' )))
-			die( 'Unable to open file: ' . LOCAL_SSL_PATH . '_' . $siteName . '_v3.ext!' );
+		$ssl_template = "authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = *.{$site_name}
+DNS.2 = {$site_name}";
+		if (FALSE === ($ssl_temp_file = fopen( LOCAL_SSL_PATH . '_' . $site_name . '_v3.ext', 'w' )))
+			die( 'Unable to open file: ' . LOCAL_SSL_PATH . '_' . $site_name . '_v3.ext!' );
 
 		fwrite( $ssl_temp_file, $ssl_template );
 		fclose( $ssl_temp_file );
 
-		$SUBJECT = '/C=US/ST=California/L=Los Angeles/O=DesktopServer/CN=*.' . $siteName;
-		$NUM_OF_DAYS = 3650; //10 years
-		if ( ! file_exists( $certpath . $siteName . '.crt' ) ) {
-			shell_exec( OPENSSL_PATH . ' req -new -newkey rsa:2048 -sha256 -nodes -keyout ' .
-				'"' . LOCAL_SSL_PATH . $siteName . '.key" -subj "' . $SUBJECT . '" -out ' .
-				'"' . LOCAL_SSL_PATH . $siteName . '.csr" 2>&1');
-$cmd = OPENSSL_PATH . ' req -new -newkey rsa:2048 -sha256 -nodes -keyout ' .
-				'"' . LOCAL_SSL_PATH . $siteName . '.key" -subj "' . $SUBJECT . '" -out ' .
-				'"' . LOCAL_SSL_PATH . $siteName . '.csr" 2>&1';
+		$subject = '/C=US/ST=California/L=Los Angeles/O=DesktopServer/CN=*.' . $site_name;
+		$num_of_daya = 3650; //10 years
+		if ( ! file_exists( $certpath . $site_name . '.crt' ) ) {
+			$cmd = OPENSSL_PATH . ' req -new -newkey rsa:2048 -sha256 -nodes -keyout ' .
+				'"' . LOCAL_SSL_PATH . $site_name . '.key" -subj "' . $subject . '" -out ' .
+				'"' . LOCAL_SSL_PATH . $site_name . '.csr" 2>&1';
 local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
-			shell_exec( OPENSSL_PATH . ' x509 -req -in ' .
-				'"' . LOCAL_SSL_PATH . $siteName . '.csr" -CA ' .
+			$res = shell_exec( $cmd );
+local_ssl_debug(__FUNCTION__.'() res: ' . $res);
+
+			$cmd = OPENSSL_PATH . ' x509 -req -in ' .
+				'"' . LOCAL_SSL_PATH . $site_name . '.csr" -CA ' .
 				'"' . LOCAL_SSL_PATH  . 'ServerPressCA.crt" -CAkey ' .
 				'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -CAcreateserial -out '.
-				'"' . LOCAL_SSL_PATH . $siteName . '.crt" -days ' . $NUM_OF_DAYS . ' -sha256 -extfile ' .
-				'"' . LOCAL_SSL_PATH . '_' . $siteName . '_v3.ext" 2>&1');
-$cmd = OPENSSL_PATH . ' x509 -req -in ' .
-				'"' . LOCAL_SSL_PATH . $siteName . '.csr" -CA ' .
-				'"' . LOCAL_SSL_PATH  . 'ServerPressCA.crt" -CAkey ' .
-				'"' . LOCAL_SSL_PATH . 'ServerPressCA.key" -CAcreateserial -out '.
-				'"' . LOCAL_SSL_PATH . $siteName . '.crt" -days ' . $NUM_OF_DAYS . ' -sha256 -extfile ' .
-				'"' . LOCAL_SSL_PATH . '_' . $siteName . '_v3.ext" 2>&1';
+				'"' . LOCAL_SSL_PATH . $site_name . '.crt" -days ' . $num_of_daya . ' -sha256 -extfile ' .
+				'"' . LOCAL_SSL_PATH . '_' . $site_name . '_v3.ext" 2>&1';
 local_ssl_debug(__FUNCTION__.'() exec: ' . $cmd);
+			$res = shell_exec( $cmd );
+local_ssl_debug(__FUNCTION__.'() res: ' . $res);
 		}
 
 		// Move the Key and Crt files
-		rename( LOCAL_SSL_PATH . $siteName . '.crt', $certpath .$siteName . '.crt' );
-		rename( LOCAL_SSL_PATH . $siteName . '.key', $keypath .$siteName . '.key' );
+		rename( LOCAL_SSL_PATH . $site_name . '.crt', $certpath . $site_name . '.crt' );
+		rename( LOCAL_SSL_PATH . $site_name . '.key', $keypath . $site_name . '.key' );
 
 		// Cleanup After ourselves
-		unlink( LOCAL_SSL_PATH . '_' . $siteName . '_v3.ext' );
-		unlink( LOCAL_SSL_PATH  . $siteName . '.csr' );
+		unlink( LOCAL_SSL_PATH . '_' . $site_name . '_v3.ext' );
+		unlink( LOCAL_SSL_PATH  . $site_name . '.csr' );
 	}
 }
 
