@@ -2,3 +2,4 @@
 *.key
 *.srl
 .DS_Store
+ debug_localssl.log
