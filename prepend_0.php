@@ -209,7 +209,7 @@ if ( $ds_runtime->last_ui_event->action == "site_removed" ) {
 
 //Create SSLs for new sites
 if ( 'update_server' != $ds_runtime->last_ui_event->action ) return;
-$debug_local_ssl = FALSE;
+$debug_local_ssl = TRUE;
 //Set the Debug File for logs
 if ( $debug_local_ssl == TRUE ) {
 	$debug_local_ssl_path = LOCAL_SSL_PATH . "debug_localssl.log";

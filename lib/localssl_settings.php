@@ -1,5 +1,5 @@
 <?php
-class Custom_Settings_Page {
+class local_SSL_Custom_Settings_Page {
 
 	public function __construct() {
 
@@ -81,6 +81,6 @@ class Custom_Settings_Page {
 
 }
 
-new Custom_Settings_Page;
+new local_SSL_Custom_Settings_Page;
 
 ?>
