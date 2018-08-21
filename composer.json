@@ -1,0 +1,14 @@
+{
+    "name": "serverpress/local-ssl",
+    "description": "Allow DesktopServer to use SSL.",
+    "type": "wordpress-plugin",
+    "authors":[
+        {
+            "name": "Joshua Knapp",
+            "homepage": "http://joshuaknapp.me"
+        }
+    ],
+    "require": {
+        "composer/installers": "~1.0"
+    }
+}
