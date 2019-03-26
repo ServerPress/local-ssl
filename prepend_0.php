@@ -4,7 +4,7 @@ global $ds_runtime;
 
 //Add Debug Logging Flag to troubleshoot issues better
 global $debug_local_ssl;
-global $debug_local_ssl_path;
+global $debug_local_ssl_path; 
 
 //Set the Stage
 //define OPENSSL location
@@ -27,6 +27,7 @@ if ( PHP_OS !== 'Darwin' ){
 function rewrite_vhosts() {
 	global $debug_local_ssl;
 	global $debug_local_ssl_path;
+	$get_server_name = '';
 	//Are we on Mac or PC
 	if ( PHP_OS === 'Darwin' ){
 		$httpd_conf = '/Applications/XAMPP/xamppfiles/etc/extra/httpd-vhosts.conf';
