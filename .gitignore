@@ -3,3 +3,4 @@
 *.srl
 .DS_Store
 debug_localssl.log
+/win32/.DS_Store
