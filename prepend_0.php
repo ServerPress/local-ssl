@@ -133,7 +133,7 @@ function create_root_ca() {
 		} else {
 			//Mac
 			//Try to install the Root CA
-			$return_data = shell_exec("osascript " . LOCAL_SSL_PATH . "mac_root_ca_install.scpt");
+			$return_data = shell_exec("security add-trusted-cert -d -r trustRoot -k \"/Library/Keychains/System.keychain\" \"/Applications/XAMPP/ds-plugins/local-ssl/ServerPressCA.crt\"");
 			if ( $debug_local_ssl == TRUE) {
 				error_log("Attempt to install Root CA Returned: " . $return_data . PHP_EOL,3,$debug_local_ssl_path);
 			}
