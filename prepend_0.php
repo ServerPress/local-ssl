@@ -87,7 +87,7 @@ function rewrite_vhosts() {
 		
 		//reset for closed virtualhost
 		if ( strpos($httpd_line,'/VirtualHost') != FALSE ) {
-			unset($get_server_name);
+			$get_server_name = FALSE;
 			unset($servername);
 			unset($domain);
 		}
