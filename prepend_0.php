@@ -4,7 +4,7 @@ global $ds_runtime;
 
 //Add Debug Logging Flag to troubleshoot issues better
 global $debug_local_ssl;
-global $debug_local_ssl_path; 
+global $debug_local_ssl_path;
 
 //Set the Stage
 //define OPENSSL location
@@ -27,7 +27,6 @@ if ( PHP_OS !== 'Darwin' ){
 function rewrite_vhosts() {
 	global $debug_local_ssl;
 	global $debug_local_ssl_path;
-	$get_server_name = '';
 	//Are we on Mac or PC
 	if ( PHP_OS === 'Darwin' ){
 		$httpd_conf = '/Applications/XAMPP/xamppfiles/etc/extra/httpd-vhosts.conf';
@@ -120,7 +119,7 @@ function create_root_ca() {
 		if ( $debug_local_ssl == TRUE) {
 			error_log("Root Certificate Authority Key Generation returned: " . $return_data . PHP_EOL,3,$debug_local_ssl_path);
 		}
-		$return_data = shell_exec(OPENSSL_PATH . ' req -x509 -new -nodes -key ' . LOCAL_SSL_PATH . 'ServerPressCA.key -sha256 -days 3650 -out ' . LOCAL_SSL_PATH . 'ServerPressCA.crt  -subj "/C=US/ST=California/L=Los Angeles/O=ServerPress/OU=Customers/CN=Serverpress.localhost" 2>&1');	
+		$return_data = shell_exec(OPENSSL_PATH . ' req -x509 -new -nodes -key ' . LOCAL_SSL_PATH . 'ServerPressCA.key -sha256 -days 825 -out ' . LOCAL_SSL_PATH . 'ServerPressCA.crt  -subj "/C=US/ST=California/L=Los Angeles/O=ServerPress/OU=Customers/CN=Serverpress.localhost" 2>&1');	
 		if ( $debug_local_ssl == TRUE) {
 			error_log("Root Certificate Authority Cert Generation returned: " . $return_data . PHP_EOL,3,$debug_local_ssl_path);
 		}		
@@ -166,7 +165,7 @@ function create_ssl($domain = null, $keypath, $certpath) {
 			error_log("SSL Request Data : " . PHP_EOL . $ssl_template . PHP_EOL,3,$debug_local_ssl_path);
 		}
 		$SUBJECT="/C=US/ST=California/L=Los Angeles/O=DesktopServer/CN=*.$siteName";
-		$NUM_OF_DAYS = 3650; //10 years
+		$NUM_OF_DAYS = 825; //2 years
 		if ( $debug_local_ssl == TRUE) {
 			error_log("SSL Subject and number of days data : " . PHP_EOL . $SUBJECT . PHP_EOL . $NUM_OF_DAYS . PHP_EOL,3,$debug_local_ssl_path);
 		}
