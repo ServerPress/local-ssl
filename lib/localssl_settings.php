@@ -75,7 +75,7 @@ class local_SSL_Custom_Settings_Page {
 
 		// Field output.
 		echo '<input type="checkbox" name="localssl_settings[localssl_https_upgrade]" class="localssl_https_upgrade_field" value="checked" ' . checked( $value, 'checked', false ) . '> ' . __( '', 'text_domain' );
-		echo '<span class="description">' . __( 'Activating this option will forces ALL instances of http:// to https://. This can cause issues with scripts loading from other locations.', 'text_domain' ) . '</span>';
+		echo '<span class="description">' . __( 'Activating this option will force ALL instances of http:// to https://. This can cause issues with scripts loading from other locations.', 'text_domain' ) . '</span>';
 
 	}
 
